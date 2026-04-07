@@ -16,8 +16,9 @@ class LocalNotificationsService {
 
   LocalNotificationsService._internal();
 
-  Future<void> initialize() async {
+  Future<void> initNotification() async {
     tz.initializeTimeZones();
+    tz.setLocalLocation(tz.getLocation('America/Mexico_City'));
 
     const AndroidInitializationSettings initializationSettingsAndroid =
         AndroidInitializationSettings('@mipmap/ic_launcher');
@@ -86,27 +87,31 @@ class LocalNotificationsService {
     String description,
     DateTime scheduledTime,
     int minutesBefore,
+    int notificationId,
   ) async {
-    // Asegurar que tenemos permiso antes de programar
-    final bool hasPermission = await _ensurePermission();
-    if (!hasPermission) {
-      print('❌ No se puede programar notificación sin permiso');
-      return;
-    }
-
+    print('🔔 ========== scheduleNotification LLAMADA ==========');
+    print('   Título: $title | Desc: $description');
+    print('   Hora: $scheduledTime | ID: $notificationId');
     try {
+      // Verificar y solicitar permisos ANTES de programar
+      final hasPermission = await _ensurePermission();
+      if (!hasPermission) {
+        print('⚠️ Permiso de notificación denegado');
+        return;
+      }
+
       final DateTime notificationTime =
           scheduledTime.subtract(Duration(minutes: minutesBefore));
       final tz.TZDateTime tzScheduledTime =
           tz.TZDateTime.from(notificationTime, tz.local);
 
-      // Validar que la hora no esté en el pasado
-      final tz.TZDateTime nowTZ = tz.TZDateTime.now(tz.local);
-      if (tzScheduledTime.isBefore(nowTZ)) {
-        print('⚠️ La hora de notificación está en el pasado, se mostrará inmediatamente');
-        await showTestNotification(title, description);
-        return;
-      }
+      // Convertir ID a un rango válido (0 a 2147483647)
+      final int safeId = (notificationId % 2147483647).abs();
+      
+      print('📅 Fecha y hora ingresada: $scheduledTime');
+      print('⏰ Hora actual: ${DateTime.now()}');
+      print('🆔 ID de notificación: $safeId');
+      print('📲 Programando para: ${tzScheduledTime.toString()}');
 
       const AndroidNotificationDetails androidPlatformChannelSpecifics =
           AndroidNotificationDetails(
@@ -123,22 +128,25 @@ class LocalNotificationsService {
         android: androidPlatformChannelSpecifics,
       );
 
-      final int uniqueId = scheduledTime.millisecondsSinceEpoch.toInt();
-
+      print('📲 Programando notificación:');
+      print('   Título: $title');
+      print('   Descripción: $description');
+      print('   ID: $safeId');
+      
       await _notificationsPlugin.zonedSchedule(
-        uniqueId,
+        safeId,
         title,
         description,
         tzScheduledTime,
         platformChannelSpecifics,
-        androidAllowWhileIdle: true,
+        androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
         uiLocalNotificationDateInterpretation:
             UILocalNotificationDateInterpretation.absoluteTime,
       );
 
-      print('✅ Notificación programada para: ${tzScheduledTime.toString()} (ID: $uniqueId)');
+      print('✅ NOTIFICACIÓN PROGRAMADA (ID: $safeId)');
     } catch (e) {
-      print('❌ Error al programar notificación: $e');
+      print('❌ ERROR CAPTURADO: $e type: ${e.runtimeType}');
     }
   }
 
@@ -151,13 +159,10 @@ class LocalNotificationsService {
   }
 
   Future<void> showTestNotification(String title, String description) async {
-    // Asegurar que tenemos permiso antes de mostrar
-    final bool hasPermission = await _ensurePermission();
-    if (!hasPermission) {
-      print('❌ No se puede mostrar notificación sin permiso');
-      return;
-    }
-
+    print('🧪 ========== MOSTRANDO NOTIFICACIÓN DE PRUEBA ==========');
+    print('   Título: $title');
+    print('   Descripción: $description');
+    
     const AndroidNotificationDetails androidPlatformChannelSpecifics =
         AndroidNotificationDetails(
       'reminder_channel',
@@ -174,16 +179,22 @@ class LocalNotificationsService {
     );
 
     try {
-      final int uniqueId = DateTime.now().millisecondsSinceEpoch ~/ 1000;
+      final int uniqueId = DateTime.now().millisecondsSinceEpoch.toInt() % 2147483647;
+      print('   ID: $uniqueId');
+      print('   LLAMANDO: _notificationsPlugin.show()');
+      
       await _notificationsPlugin.show(
         uniqueId,
         title,
         description,
         platformChannelSpecifics,
       );
-      print(' Notificación de prueba mostrada (ID: $uniqueId)');
+      
+      print('✅ NOTIFICACIÓN DE PRUEBA MOSTRADA EXITOSAMENTE');
     } catch (e) {
-      print(' Error mostrando notificación de prueba: $e');
+      print('❌ ERROR MOSTRAND NOTIFICACIÓN: $e');
+      print('   Tipo: ${e.runtimeType}');
     }
   }
 }
+

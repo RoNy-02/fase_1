@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:intl/intl.dart';
+import '../helpers/services/event_service.dart';
+import '../models/event.dart';
 
 class EventsScreen extends StatefulWidget {
   const EventsScreen({Key? key}) : super(key: key);
@@ -41,18 +43,12 @@ class _EventsScreenState extends State<EventsScreen> {
       text: existingEvent?['location'] ?? '',
     );
 
-    showModalBottomSheet(
+    showDialog(
       context: context,
-      isScrollControlled: true,
       builder: (BuildContext context) {
-        return Padding(
-          padding: EdgeInsets.only(
-            left: 16.0,
-            right: 16.0,
-            top: 16.0,
-            bottom: MediaQuery.of(context).viewInsets.bottom,
-          ),
-          child: SingleChildScrollView(
+        return AlertDialog(
+          title: Text(existingEvent != null ? 'Editar Evento' : 'Crear Nuevo Evento'),
+          content: SingleChildScrollView(
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
@@ -102,44 +98,62 @@ class _EventsScreenState extends State<EventsScreen> {
                   controller: locationController,
                   decoration: const InputDecoration(labelText: 'Ubicación'),
                 ),
-                const SizedBox(height: 16.0),
-                ElevatedButton(
-                  onPressed: () async {
-                    if (titleController.text.isNotEmpty &&
-                        descriptionController.text.isNotEmpty &&
-                        dateController.text.isNotEmpty &&
-                        timeController.text.isNotEmpty &&
-                        locationController.text.isNotEmpty) {
-                      final newEvent = {
-                        'title': titleController.text,
-                        'description': descriptionController.text,
-                        'date': '${dateController.text} ${timeController.text}',
-                        'location': locationController.text,
-                        'tag': existingEvent?['tag'] ?? 'personal',
-                      };
-
-                      if (existingEvent != null && index != null) {
-                        final docId = existingEvent['id'];
-                        if (docId != null) {
-                          await _eventsCollection.doc(docId).update(newEvent);
-                        }
-                      } else {
-                        await _eventsCollection.add(newEvent);
-                      }
-
-                      setState(() {});
-                      Navigator.pop(context);
-                    } else {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text('Por favor, complete todos los campos.')),
-                      );
-                    }
-                  },
-                  child: Text(existingEvent != null ? 'Actualizar Evento' : 'Guardar Evento'),
-                ),
               ],
             ),
           ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.pop(context);
+              },
+              child: const Text('Cancelar'),
+            ),
+            ElevatedButton(
+              onPressed: () async {
+                if (titleController.text.isNotEmpty &&
+                    descriptionController.text.isNotEmpty &&
+                    dateController.text.isNotEmpty &&
+                    timeController.text.isNotEmpty &&
+                    locationController.text.isNotEmpty) {
+                  final newEvent = {
+                    'title': titleController.text,
+                    'description': descriptionController.text,
+                    'date': '${dateController.text} ${timeController.text}',
+                    'location': locationController.text,
+                    'tag': existingEvent?['tag'] ?? 'personal',
+                  };
+
+                  Navigator.pop(context);
+
+                  if (existingEvent != null && index != null) {
+                    final docId = existingEvent['id'];
+                    if (docId != null) {
+                      await _eventsCollection.doc(docId).update(newEvent);
+                    }
+                  } else {
+                    await _eventsCollection.add(newEvent);
+                    
+                    // Guardar evento en el servicio
+                    final event = Event(
+                      title: titleController.text,
+                      description: descriptionController.text,
+                      date: dateController.text,
+                      time: timeController.text,
+                      location: locationController.text,
+                    );
+                    EventService().addEvent(event);
+                  }
+
+                  setState(() {});
+                } else {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Por favor, complete todos los campos.')),
+                  );
+                }
+              },
+              child: Text(existingEvent != null ? 'Actualizar Evento' : 'Guardar Evento'),
+            ),
+          ],
         );
       },
     );
@@ -219,8 +233,34 @@ class _EventsScreenState extends State<EventsScreen> {
                       ),
                       IconButton(
                         icon: const Icon(Icons.delete, color: Colors.red),
-                        onPressed: () async {
-                          await _eventsCollection.doc(events[index].id).delete();
+                        onPressed: () {
+                          showDialog(
+                            context: context,
+                            builder: (BuildContext context) {
+                              return AlertDialog(
+                                title: const Text('Eliminar Evento'),
+                                content: const Text('¿Estás seguro de que deseas eliminar este evento?'),
+                                actions: [
+                                  TextButton(
+                                    onPressed: () {
+                                      Navigator.pop(context);
+                                    },
+                                    child: const Text('Cancelar'),
+                                  ),
+                                  ElevatedButton(
+                                    onPressed: () async {
+                                      Navigator.pop(context);
+                                      await _eventsCollection.doc(events[index].id).delete();
+                                    },
+                                    style: ElevatedButton.styleFrom(
+                                      backgroundColor: Colors.red,
+                                    ),
+                                    child: const Text('Eliminar'),
+                                  ),
+                                ],
+                              );
+                            },
+                          );
                         },
                       ),
                     ],

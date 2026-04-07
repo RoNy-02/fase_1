@@ -9,7 +9,7 @@ import 'helpers/services/local_notifications_service.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await FirebaseService.initializeFirebase();
-  await LocalNotificationsService().initialize();
+  await LocalNotificationsService().initNotification();
   runApp(const MyApp());
 }
 

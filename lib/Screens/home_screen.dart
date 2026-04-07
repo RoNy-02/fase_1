@@ -2,6 +2,12 @@ import 'package:fase_1/Screens/events_screen.dart';
 import 'package:fase_1/Screens/notes_screen.dart';
 import 'package:fase_1/Screens/reminder_screen.dart';
 import 'package:flutter/material.dart';
+import '../helpers/services/local_notifications_service.dart';
+import '../helpers/services/reminder_service.dart';
+import '../helpers/services/note_service.dart';
+import '../helpers/services/event_service.dart';
+import '../models/note.dart';
+import '../models/event.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -31,8 +37,9 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        titleTextStyle: TextStyle(color: Color(0xffffffff)),
-        title: const Text('Inicio'),
+        titleTextStyle: TextStyle(color: Color(0xffffffff),
+        fontSize: 23),
+        title: const Text('Notas y más..'),
         backgroundColor: const Color.fromARGB(255, 160, 19, 66),
       ),
       body: _pages[_selectedIndex],
@@ -63,7 +70,57 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 }
 
-class HomeMenu extends StatelessWidget {
+class HomeMenu extends StatefulWidget {
+  @override
+  State<HomeMenu> createState() => _HomeMenuState();
+}
+
+class _HomeMenuState extends State<HomeMenu> {
+  final LocalNotificationsService _notificationsService =
+      LocalNotificationsService();
+  bool _isTestingNotification = false;
+
+  Future<void> _sendTestNotification() async {
+    setState(() => _isTestingNotification = true);
+    
+    try {
+      await _notificationsService.showTestNotification(
+        '🧪 Notificación de Prueba',
+        'Si ves este mensaje, ¡las notificaciones funcionan! ✅',
+      );
+      
+      if (!mounted) return;
+      
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('✅ Notificación enviada. Revisa tu teléfono.'),
+          duration: Duration(seconds: 3),
+          backgroundColor: Colors.green,
+        ),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('❌ Error: $e'),
+          duration: const Duration(seconds: 3),
+          backgroundColor: Colors.red,
+        ),
+      );
+    } finally {
+      setState(() => _isTestingNotification = false);
+    }
+  }
+
+  final TextEditingController _quickNoteController = TextEditingController();
+
+  @override
+  void dispose() {
+    _quickNoteController.dispose();
+    super.dispose();
+  }
+
   @override
   Widget build(BuildContext context) {
     return Padding(
@@ -81,6 +138,67 @@ class HomeMenu extends StatelessWidget {
             textAlign: TextAlign.center,
           ),
           const SizedBox(height: 16.0),
+          // Cuadro de nota rápida centrado
+          Card(
+            elevation: 4,
+            color: Colors.white,
+            child: Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: Column(
+                children: [
+                  const Text(
+                    'Crear Nota Rápida',
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                      color: Color.fromARGB(255, 39, 176, 174),
+                    ),
+                  ),
+                  const SizedBox(height: 12.0),
+                  TextField(
+                    controller: _quickNoteController,
+                    maxLines: 3,
+                    decoration: InputDecoration(
+                      hintText: 'Escribe tu nota aquí...',
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(8.0),
+                      ),
+                      filled: true,
+                      fillColor: Colors.grey[100],
+                    ),
+                  ),
+                  const SizedBox(height: 12.0),
+                  ElevatedButton.icon(
+                    onPressed: () {
+                      if (_quickNoteController.text.isNotEmpty) {
+                        // Guardar nota en el servicio
+                        final note = Note(
+                          title: 'Nota Rápida',
+                          content: _quickNoteController.text,
+                        );
+                        NoteService().addNote(note);
+                        
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text('✅ Nota guardada correctamente'),
+                            duration: Duration(seconds: 2),
+                            backgroundColor: Colors.green,
+                          ),
+                        );
+                        _quickNoteController.clear();
+                      }
+                    },
+                    icon: const Icon(Icons.save),
+                    label: const Text('Guardar Nota'),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color.fromARGB(255, 39, 176, 174),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          const SizedBox(height: 24.0),
           Expanded(
             child: ListView(
               children: [
@@ -125,6 +243,36 @@ class HomeMenu extends StatelessWidget {
                       ),
                     );
                   },
+                ),
+                const SizedBox(height: 24.0),
+                // Sección de Recordatorios Creados
+                _RemindersSection(),
+                const SizedBox(height: 24.0),
+                // Sección de Eventos Creados
+                _EventsSection(),
+                const SizedBox(height: 24.0),
+                ElevatedButton.icon(
+                  onPressed: _isTestingNotification ? null : _sendTestNotification,
+                  icon: _isTestingNotification
+                      ? const SizedBox(
+                          width: 20,
+                          height: 20,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            valueColor:
+                                AlwaysStoppedAnimation<Color>(Colors.white),
+                          ),
+                        )
+                      : const Icon(Icons.notifications_active),
+                  label: Text(
+                    _isTestingNotification 
+                        ? 'Enviando...' 
+                        : '🧪 Probar Notificación',
+                  ),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.orange,
+                    padding: const EdgeInsets.symmetric(vertical: 12.0),
+                  ),
                 ),
               ],
             ),
@@ -182,6 +330,292 @@ class _DataCard extends StatelessWidget {
               ),
             ],
           ),
+        ),
+      ),
+    );
+  }
+}
+
+class _RemindersSection extends StatefulWidget {
+  @override
+  State<_RemindersSection> createState() => _RemindersSectionState();
+}
+
+class _RemindersSectionState extends State<_RemindersSection> {
+  @override
+  Widget build(BuildContext context) {
+    final reminders = ReminderService().reminders;
+
+    if (reminders.isEmpty) {
+      return Card(
+        color: Colors.grey[100],
+        child: Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Column(
+            children: [
+              const Icon(Icons.alarm, color: Colors.grey, size: 40),
+              const SizedBox(height: 8.0),
+              const Text(
+                'Recordatorios Creados',
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.grey,
+                ),
+              ),
+              const SizedBox(height: 8.0),
+              const Text(
+                'No hay recordatorios creados aún',
+                style: TextStyle(fontSize: 14, color: Colors.grey),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
+    return Card(
+      color: Colors.green.withOpacity(0.1),
+      child: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                const Icon(Icons.alarm, color: Colors.green, size: 28),
+                const SizedBox(width: 12.0),
+                const Text(
+                  'Recordatorios Creados',
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.green,
+                  ),
+                ),
+                const Spacer(),
+                Text(
+                  '${reminders.length}',
+                  style: const TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.green,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 12.0),
+            ...reminders.asMap().entries.map((entry) {
+              int index = entry.key;
+              final reminder = entry.value;
+              return Padding(
+                padding: const EdgeInsets.symmetric(vertical: 8.0),
+                child: Container(
+                  padding: const EdgeInsets.all(12.0),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(8.0),
+                    border: Border.all(color: Colors.green.shade300),
+                  ),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              '${reminder.date} ${reminder.time}',
+                              style: const TextStyle(
+                                fontSize: 13,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.black87,
+                              ),
+                            ),
+                            const SizedBox(height: 4.0),
+                            Text(
+                              reminder.description,
+                              style: const TextStyle(
+                                fontSize: 12,
+                                color: Colors.black54,
+                              ),
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ],
+                        ),
+                      ),
+                      IconButton(
+                        icon: const Icon(Icons.delete, color: Colors.red),
+                        onPressed: () {
+                          setState(() {
+                            ReminderService().removeReminder(index);
+                          });
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text('✅ Recordatorio eliminado'),
+                              duration: Duration(seconds: 2),
+                              backgroundColor: Colors.green,
+                            ),
+                          );
+                        },
+                      ),
+                    ],
+                  ),
+                ),
+              );
+            }).toList(),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _EventsSection extends StatefulWidget {
+  @override
+  State<_EventsSection> createState() => _EventsSectionState();
+}
+
+class _EventsSectionState extends State<_EventsSection> {
+  @override
+  Widget build(BuildContext context) {
+    final events = EventService().events;
+
+    if (events.isEmpty) {
+      return Card(
+        color: Colors.grey[100],
+        child: Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Column(
+            children: [
+              const Icon(Icons.event, color: Colors.grey, size: 40),
+              const SizedBox(height: 8.0),
+              const Text(
+                'Eventos Creados',
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.grey,
+                ),
+              ),
+              const SizedBox(height: 8.0),
+              const Text(
+                'No hay eventos creados aún',
+                style: TextStyle(fontSize: 14, color: Colors.grey),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
+    return Card(
+      color: Colors.blue.withOpacity(0.1),
+      child: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                const Icon(Icons.event, color: Colors.blue, size: 28),
+                const SizedBox(width: 12.0),
+                const Text(
+                  'Eventos Creados',
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.blue,
+                  ),
+                ),
+                const Spacer(),
+                Text(
+                  '${events.length}',
+                  style: const TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.blue,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 12.0),
+            ...events.asMap().entries.map((entry) {
+              int index = entry.key;
+              final event = entry.value;
+              return Padding(
+                padding: const EdgeInsets.symmetric(vertical: 8.0),
+                child: Container(
+                  padding: const EdgeInsets.all(12.0),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(8.0),
+                    border: Border.all(color: Colors.blue.shade300),
+                  ),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              event.title,
+                              style: const TextStyle(
+                                fontSize: 13,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.black87,
+                              ),
+                            ),
+                            const SizedBox(height: 2.0),
+                            Text(
+                              '${event.date} ${event.time}',
+                              style: const TextStyle(
+                                fontSize: 11,
+                                color: Colors.black54,
+                              ),
+                            ),
+                            const SizedBox(height: 2.0),
+                            Text(
+                              event.location,
+                              style: const TextStyle(
+                                fontSize: 11,
+                                color: Colors.black54,
+                              ),
+                            ),
+                            const SizedBox(height: 4.0),
+                            Text(
+                              event.description,
+                              style: const TextStyle(
+                                fontSize: 11,
+                                color: Colors.black54,
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ],
+                        ),
+                      ),
+                      IconButton(
+                        icon: const Icon(Icons.delete, color: Colors.red),
+                        onPressed: () {
+                          setState(() {
+                            EventService().removeEvent(index);
+                          });
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text('✅ Evento eliminado'),
+                              duration: Duration(seconds: 2),
+                              backgroundColor: Colors.green,
+                            ),
+                          );
+                        },
+                      ),
+                    ],
+                  ),
+                ),
+              );
+            }).toList(),
+          ],
         ),
       ),
     );
