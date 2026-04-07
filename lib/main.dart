@@ -1,24 +1,36 @@
-import 'package:fase_1/Screens/home_screen.dart';
-import 'package:fase_1/Screens/login_screen.dart';
 import 'package:flutter/material.dart';
+import 'Screens/login_screen.dart';
+import 'Screens/home_screen.dart';
+import 'Screens/notes_screen.dart';
+import 'Screens/events_screen.dart';
+import 'helpers/services/firebase_service.dart';
+import 'helpers/services/local_notifications_service.dart';
 
-void main() {
-  runApp(MyApp());
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await FirebaseService.initializeFirebase();
+  await LocalNotificationsService().initialize();
+  runApp(const MyApp());
 }
 
-class MyApp extends StatelessWidget{
+class MyApp extends StatelessWidget {
   const MyApp({super.key});
 
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Fast Note',
       debugShowCheckedModeBanner: false,
+      title: 'App Recordatorios',
       theme: ThemeData(
-        primaryColor: Color(0xfffBD3924)
+        primarySwatch: Colors.red,
       ),
-      home: LoginScreen(),
-      //home: SplashScreen(),
+      initialRoute: '/login',
+      routes: {
+        '/login': (context) => const LoginRegisterScreen(),
+        '/home': (context) => const HomeScreen(),
+        '/notes': (context) => const NotesScreen(),
+        '/events': (context) => const EventsScreen(),
+      },
     );
   }
 }

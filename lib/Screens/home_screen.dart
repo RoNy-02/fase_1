@@ -1,74 +1,187 @@
+import 'package:fase_1/Screens/events_screen.dart';
+import 'package:fase_1/Screens/notes_screen.dart';
+import 'package:fase_1/Screens/reminder_screen.dart';
 import 'package:flutter/material.dart';
-import 'event_screen.dart';
-import 'note_screen.dart';
-import 'reminder_screen.dart';
 
-class HomeScreen extends StatelessWidget {
+class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
 
   @override
+  State<HomeScreen> createState() => _HomeScreenState();
+
+}
+
+class _HomeScreenState extends State<HomeScreen> {
+  int _selectedIndex = 0;
+
+  static List<Widget> _pages = <Widget>[
+    HomeMenu(), // Nueva pantalla de inicio con datos y botones
+    NotesScreen(),
+    EventsScreen(),
+    ReminderScreen(),
+  ];
+
+  void _onItemTapped(int index) {
+    setState(() {
+      _selectedIndex = index;
+    });
+  }
+
+  @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'menu principal',
-      home: Scaffold(
-        appBar: AppBar(
-          backgroundColor: Color.fromARGB(255, 160, 19, 66),
-          title: const Text(
-            'Bienvenido...',
-            style: TextStyle(
-              fontSize: 25,
-              color: Color(0xffffffff),
-              fontWeight: FontWeight.bold,
-            ),
+    return Scaffold(
+      appBar: AppBar(
+        titleTextStyle: TextStyle(color: Color(0xffffffff)),
+        title: const Text('Inicio'),
+        backgroundColor: const Color.fromARGB(255, 160, 19, 66),
+      ),
+      body: _pages[_selectedIndex],
+      bottomNavigationBar: BottomNavigationBar(
+        currentIndex: _selectedIndex,
+        onTap: _onItemTapped,
+        items: const [
+          BottomNavigationBarItem(
+            backgroundColor: Color.fromARGB(255, 160, 19, 66),
+            icon: Icon(Icons.home),
+            label: 'Inicio',
           ),
-        ),
-        body: GridView.count(
-          crossAxisCount: 2,
-          padding: const EdgeInsets.all(16.0),
-          crossAxisSpacing: 16.0,
-          mainAxisSpacing: 16.0,
-          children: [
-            _buildMenuItem(context, 'Notas', Icons.note, const NoteScreen()),
-            _buildMenuItem(context, 'Eventos', Icons.event, const EventScreen()),
-            _buildMenuItem(context, 'Recordatorios', Icons.alarm, const ReminderScreen()),
-            _buildMenuItem(context, 'Configuración', Icons.settings, const Center(child: Text('Configuración'))),
-          ],
-        ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.note),
+            label: 'Notas',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.event),
+            label: 'Eventos',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.alarm),
+            label: 'Recordatorios',
+          ),
+        ],
       ),
     );
   }
+}
 
-  Widget _buildMenuItem(BuildContext context, String title, IconData icon, Widget destination) {
+class HomeMenu extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.all(16.0),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          const Text(
+            'Resumen de tus datos',
+            style: TextStyle(
+              fontSize: 24,
+              fontWeight: FontWeight.bold,
+              color: Color.fromARGB(255, 39, 176, 174),
+            ),
+            textAlign: TextAlign.center,
+          ),
+          const SizedBox(height: 16.0),
+          Expanded(
+            child: ListView(
+              children: [
+                _DataCard(
+                  title: 'Notas',
+                  description: 'Tus notas más recientes',
+                  icon: Icons.note,
+                  color: Colors.purple,
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => NotesScreen(),
+                      ),
+                    );
+                  },
+                ),
+                _DataCard(
+                  title: 'Eventos',
+                  description: 'Próximos eventos en tu agenda',
+                  icon: Icons.event,
+                  color: Colors.blue,
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => EventsScreen(),
+                      ),
+                    );
+                  },
+                ),
+                _DataCard(
+                  title: 'Recordatorios',
+                  description: 'Tus recordatorios pendientes',
+                  icon: Icons.alarm,
+                  color: Colors.green,
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => ReminderScreen(),
+                      ),
+                    );
+                  },
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _DataCard extends StatelessWidget {
+  final String title;
+  final String description;
+  final IconData icon;
+  final Color color;
+  final VoidCallback onTap;
+
+  const _DataCard({
+    required this.title,
+    required this.description,
+    required this.icon,
+    required this.color,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
     return GestureDetector(
-      onTap: () {
-        Navigator.push(
-          context,
-          MaterialPageRoute(builder: (context) => destination),
-        );
-      },
-      child: Container(
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(12.0),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.grey.withOpacity(0.5),
-              spreadRadius: 2,
-              blurRadius: 5,
-              offset: const Offset(0, 3),
-            ),
-          ],
-        ),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(icon, size: 50, color: Color.fromARGB(255, 160, 19, 66)),
-            const SizedBox(height: 8.0),
-            Text(
-              title,
-              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-            ),
-          ],
+      onTap: onTap,
+      child: Card(
+        color: color.withOpacity(0.1),
+        child: Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Row(
+            children: [
+              Icon(icon, color: color, size: 40),
+              const SizedBox(width: 16.0),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    title,
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                      color: color,
+                    ),
+                  ),
+                  const SizedBox(height: 4.0),
+                  Text(
+                    description,
+                    style: const TextStyle(fontSize: 14, color: Colors.black54),
+                  ),
+                ],
+              ),
+            ],
+          ),
         ),
       ),
     );

@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "589924724974",
+    "project_id": "fase1-estadias",
+    "storage_bucket": "fase1-estadias.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:589924724974:android:5000cc2a750281fc3003ff",
+        "android_client_info": {
+          "package_name": "com.example.fase_1"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyD3O7cPK6ptS19Tl0RQOjCWI7FRZj2B8-w"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
