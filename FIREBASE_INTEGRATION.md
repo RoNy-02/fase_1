@@ -1,11 +1,8 @@
 # Integración Firebase - Notas y Eventos por Usuario
 
-## 📋 Resumen
-Se ha integrado Firebase para guardar **notas y eventos** de forma personalizada por usuario. Los datos se recuperan automáticamente al iniciar sesión en la cuenta.
-
 ---
 
-## 🏗️ Estructura de Datos en Firebase
+## Estructura de Datos en Firebase
 
 ```
 Firestore/
@@ -32,7 +29,6 @@ Firestore/
 
 ---
 
-## 🔧 Cambios Realizados
 
 ### 1. **data_provider.dart** (Modificado)
 Agregados métodos en `FirestoreProvider`:
@@ -63,43 +59,6 @@ Agregados métodos en `FirestoreProvider`:
 - Al guardar "Nota Rápida", se guarda en Firebase y localmente
 - Usa `FirestoreProvider.addNote()` para persistencia
 
----
-
-## ✨ Características
-
-✅ **Datos Personalizados** - Cada usuario ve solo sus propias notas y eventos  
-✅ **Sincronización en Tiempo Real** - Cambios se reflejan inmediatamente gracias a Firestore Streams  
-✅ **Recuperación Automática** - Al iniciar sesión, se cargan automáticamente los datos del usuario  
-✅ **Sin Almacenamiento Local** - Datos no se guardan en el dispositivo, solo en Firebase  
-✅ **Timestamps** - Cada documento registra cuándo se creó y cuándo se modificó  
-
----
-
-## 🔄 Flujo de Datos
-
-```
-Login/Registro
-      ↓
-Usuario autenticado (Firebase Auth)
-      ↓
-NavigateTo → HomeScreen / NotesScreen / EventsScreen
-      ↓
-Screens hacen query a Firestore por userId
-      ↓
-FirestoreProvider obtiene datos: users/{userId}/notes o events
-      ↓
-StreamBuilder muestra datos en tiempo real
-      ↓
-Usuario crea/edita/elimina
-      ↓
-Métodos de FirestoreProvider actualizan Firestore
-      ↓
-Firestore actualiza el Stream → StreamBuilder redibuja UI
-```
-
----
-
-## 📝 Ejemplo de Uso
 
 ### Guardar una Nota
 ```dart
@@ -110,7 +69,7 @@ await firestoreProvider.addNote({
   'content': 'Contenido de la nota',
   'isPinned': false,
 });
-// ✅ Se guarda en: users/{userId}/notes/{newDocId}
+//  Se guarda en: users/{userId}/notes/{newDocId}
 ```
 
 ### Obtener Notas del Usuario
@@ -132,12 +91,12 @@ await firestoreProvider.updateEvent(eventId, {
   'location': 'Nueva ubicación',
   'tag': 'personal',
 });
-// ✅ Se actualiza en: users/{userId}/events/{eventId}
+//  Se actualiza en: users/{userId}/events/{eventId}
 ```
 
 ---
 
-## 🔐 Seguridad (Firestore Rules - Recomendado)
+##  Seguridad (Firestore Rules)
 
 Para proteger los datos, agregar estas reglas en Firestore:
 
@@ -151,25 +110,3 @@ service cloud.firestore {
   }
 }
 ```
-
----
-
-## ✅ Estado Actual
-
-- ✅ Integración completada
-- ✅ Guardar notas y eventos
-- ✅ Recuperar datos del usuario
-- ✅ Editar y eliminar
-- ✅ Sincronización en tiempo real
-- ✅ Sin errores críticos (flutter analyze)
-- ⚠️ Pendiente: Agregar Firestore Rules en Firebase Console (recomendado)
-
----
-
-## 📱 Próximos Pasos (Opcionales)
-
-1. Agregar Firestore Rules para seguridad
-2. Implementar caché offline (para sincronizar cuando hay conexión)
-3. Agregar cloud functions para automatizar tareas
-4. Implementar búsqueda de notas/eventos
-5. Agregar categorías o etiquetas personalizadas
