@@ -60,22 +60,22 @@ class NotificationProvider {
     if (!Platform.isAndroid) return true; // No hay restricciones en iOS
     
     final PermissionStatus status = await Permission.notification.status;
-    print('📱 Estado de permiso: ${status.name}');
+    print(' Estado de permiso: ${status.name}');
 
     if (status.isDenied) {
       // Solicitar permiso
       final PermissionStatus result = await Permission.notification.request();
       print(result.isGranted 
-          ? '✅ Permiso otorgado' 
-          : '❌ Permiso denegado: ${result.name}');
+          ? ' Permiso otorgado' 
+          : ' Permiso denegado: ${result.name}');
       return result.isGranted;
     } else if (status.isPermanentlyDenied) {
       // Abrir configuración de la app
-      print('⚠️ Permiso denegado permanentemente, abriendo configuración');
+      print(' Permiso denegado permanentemente, abriendo configuración');
       openAppSettings();
       return false;
     } else if (status.isGranted) {
-      print('✅ Permiso ya otorgado');
+      print(' Permiso ya otorgado');
       return true;
     }
     
@@ -89,14 +89,13 @@ class NotificationProvider {
     int minutesBefore,
     int notificationId,
   ) async {
-    print('🔔 ========== scheduleNotification LLAMADA ==========');
     print('   Título: $title | Desc: $description');
     print('   Hora: $scheduledTime | ID: $notificationId');
     try {
       // Verificar y solicitar permisos ANTES de programar
       final hasPermission = await _ensurePermission();
       if (!hasPermission) {
-        print('⚠️ Permiso de notificación denegado');
+        print('Permiso de notificación denegado');
         return;
       }
 
@@ -108,18 +107,18 @@ class NotificationProvider {
       // Convertir ID a un rango válido (0 a 2147483647)
       final int safeId = (notificationId % 2147483647).abs();
       
-      print('📅 Fecha y hora ingresada: $scheduledTime');
-      print('⏰ Hora actual: ${DateTime.now()}');
-      print('🆔 ID de notificación: $safeId');
-      print('📲 Programando para: ${tzScheduledTime.toString()}');
+      print(' Fecha y hora ingresada: $scheduledTime');
+      print(' Hora actual: ${DateTime.now()}');
+      print(' ID de notificación: $safeId');
+      print(' Programando para: ${tzScheduledTime.toString()}');
 
       const AndroidNotificationDetails androidPlatformChannelSpecifics =
           AndroidNotificationDetails(
         'reminder_channel',
         'Recordatorios',
         channelDescription: 'Canal para recordatorios de la aplicación',
-        importance: Importance.max,
-        priority: Priority.high,
+        importance: Importance.defaultImportance,
+        priority: Priority.defaultPriority,
         enableVibration: true,
         playSound: true,
       );
@@ -128,7 +127,7 @@ class NotificationProvider {
         android: androidPlatformChannelSpecifics,
       );
 
-      print('📲 Programando notificación:');
+      print(' Programando notificación:');
       print('   Título: $title');
       print('   Descripción: $description');
       print('   ID: $safeId');
@@ -144,9 +143,9 @@ class NotificationProvider {
             UILocalNotificationDateInterpretation.absoluteTime,
       );
 
-      print('✅ NOTIFICACIÓN PROGRAMADA (ID: $safeId)');
+      print('NOTIFICACIÓN PROGRAMADA (ID: $safeId)');
     } catch (e) {
-      print('❌ ERROR CAPTURADO: $e type: ${e.runtimeType}');
+      print(' ERROR CAPTURADO: $e type: ${e.runtimeType}');
     }
   }
 
@@ -159,7 +158,7 @@ class NotificationProvider {
   }
 
   Future<void> showTestNotification(String title, String description) async {
-    print('🧪 ========== MOSTRANDO NOTIFICACIÓN DE PRUEBA ==========');
+    print('-MOSTRANDO NOTIFICACIÓN DE PRUEBA-');
     print('   Título: $title');
     print('   Descripción: $description');
     
@@ -168,8 +167,8 @@ class NotificationProvider {
       'reminder_channel',
       'Recordatorios',
       channelDescription: 'Canal para recordatorios de la aplicación',
-      importance: Importance.max,
-      priority: Priority.high,
+      importance: Importance.defaultImportance,
+      priority: Priority.defaultPriority,
       enableVibration: true,
       playSound: true,
     );
@@ -190,9 +189,9 @@ class NotificationProvider {
         platformChannelSpecifics,
       );
       
-      print('✅ NOTIFICACIÓN DE PRUEBA MOSTRADA EXITOSAMENTE');
+      print('NOTIFICACIÓN DE PRUEBA MOSTRADA EXITOSAMENTE');
     } catch (e) {
-      print('❌ ERROR MOSTRAND NOTIFICACIÓN: $e');
+      print(' ERROR MOSTRAND NOTIFICACIÓN: $e');
       print('   Tipo: ${e.runtimeType}');
     }
   }

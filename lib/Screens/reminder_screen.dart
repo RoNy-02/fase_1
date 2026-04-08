@@ -50,29 +50,29 @@ class _ReminderScreenState extends State<ReminderScreen> {
   Future<void> _scheduleNotification() async {
     if (selectedDate == null || selectedTime == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('⚠️ Selecciona fecha y hora')),
+        const SnackBar(content: Text('Selecciona fecha y hora')),
       );
       return;
     }
 
     if (descriptionController.text.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('⚠️ Ingresa una descripción')),
+        const SnackBar(content: Text('Ingresa una descripción')),
       );
       return;
     }
 
     final dateTimeString = '$selectedDate $selectedTime';
-    print('📝 Intentando programar: $dateTimeString');
+    print('Intentando programar: $dateTimeString');
 
     try {
       final DateTime scheduledDateTime =
           DateFormat('dd/MM/yyyy HH:mm').parse(dateTimeString);
-      print('✅ Fecha parseada: $scheduledDateTime');
+      print('Fecha parseada: $scheduledDateTime');
 
       if (scheduledDateTime.isBefore(DateTime.now())) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('⚠️ La hora debe ser futura')),
+          const SnackBar(content: Text('La hora debe ser futura')),
         );
         return;
       }
@@ -80,7 +80,7 @@ class _ReminderScreenState extends State<ReminderScreen> {
       final int notificationId =
           scheduledDateTime.millisecondsSinceEpoch.toInt();
 
-      print('🔔 Programando notificación...');
+      print('Programando notificación...');
       await _notificationsService.scheduleNotification(
         'Recordatorio',
         descriptionController.text,
@@ -89,7 +89,7 @@ class _ReminderScreenState extends State<ReminderScreen> {
         notificationId,
       );
 
-      print('✅ Notificación programada');
+      print('Notificación programada');
       
       // Guardar el recordatorio en el servicio
       final reminder = Reminder(
@@ -101,7 +101,7 @@ class _ReminderScreenState extends State<ReminderScreen> {
       
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('✅ Notificación programada para $dateTimeString'),
+          content: Text('Notificación programada para $dateTimeString'),
           backgroundColor: Colors.green,
         ),
       );
@@ -112,9 +112,9 @@ class _ReminderScreenState extends State<ReminderScreen> {
         descriptionController.clear();
       });
     } catch (e) {
-      print('❌ Error: $e');
+      print(' Error: $e');
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('❌ Error: $e')),
+        SnackBar(content: Text(' Error: $e')),
       );
     }
   }

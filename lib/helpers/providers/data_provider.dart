@@ -46,7 +46,7 @@ class FirestoreProvider {
     try {
       if (currentUserId == null) return;
       
-      print('🔄 Sincronizando notas del usuario...');
+      print('Sincronizando notas del usuario...');
       final snapshot = await _db
           .collection('users')
           .doc(currentUserId)
@@ -66,9 +66,9 @@ class FirestoreProvider {
         NoteProvider().addNote(note);
       }
       
-      print('👌 ${snapshot.docs.length} notas sincronizadas');
+      print(' ${snapshot.docs.length} notas sincronizadas');
     } catch (e) {
-      print('❌ Error sincronizando notas: $e');
+      print('Error sincronizando notas: $e');
     }
   }
 
@@ -100,18 +100,19 @@ class FirestoreProvider {
         EventProvider().addEvent(event);
       }
       
-      print('👍 ${snapshot.docs.length} eventos sincronizados');
+      print(' ${snapshot.docs.length} eventos sincronizados');
     } catch (e) {
-      print('❌ Error sincronizando eventos: $e');
+      print(' Error sincronizando eventos: $e');
     }
   }
 
   /// Carga todos los recordatorios del usuario desde Firebase (preparado para futura expansión)
+  // ========== MÉTODOS PARA RECORDATORIOS CON USUARIO ==========
   Future<void> syncUserReminders() async {
     try {
       if (currentUserId == null) return;
       
-      print('🔄 Sincronizando recordatorios del usuario...');
+      print(' Sincronizando recordatorios del usuario...');
       final snapshot = await _db
           .collection('users')
           .doc(currentUserId)

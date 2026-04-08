@@ -108,10 +108,10 @@ class LocalNotificationsService {
       // Convertir ID a un rango válido (0 a 2147483647)
       final int safeId = (notificationId % 2147483647).abs();
       
-      print('📅 Fecha y hora ingresada: $scheduledTime');
-      print('⏰ Hora actual: ${DateTime.now()}');
-      print('🆔 ID de notificación: $safeId');
-      print('📲 Programando para: ${tzScheduledTime.toString()}');
+      print(' Fecha y hora ingresada: $scheduledTime');
+      print(' Hora actual: ${DateTime.now()}');
+      print(' ID de notificación: $safeId');
+      print(' Programando para: ${tzScheduledTime.toString()}');
 
       const AndroidNotificationDetails androidPlatformChannelSpecifics =
           AndroidNotificationDetails(
@@ -128,7 +128,7 @@ class LocalNotificationsService {
         android: androidPlatformChannelSpecifics,
       );
 
-      print('📲 Programando notificación:');
+      print(' Programando notificación:');
       print('   Título: $title');
       print('   Descripción: $description');
       print('   ID: $safeId');
@@ -144,9 +144,9 @@ class LocalNotificationsService {
             UILocalNotificationDateInterpretation.absoluteTime,
       );
 
-      print('✅ NOTIFICACIÓN PROGRAMADA (ID: $safeId)');
+      print('NOTIFICACIÓN PROGRAMADA (ID: $safeId)');
     } catch (e) {
-      print('❌ ERROR CAPTURADO: $e type: ${e.runtimeType}');
+      print(' ERROR CAPTURADO: $e type: ${e.runtimeType}');
     }
   }
 
@@ -159,7 +159,7 @@ class LocalNotificationsService {
   }
 
   Future<void> showTestNotification(String title, String description) async {
-    print('🧪 ========== MOSTRANDO NOTIFICACIÓN DE PRUEBA ==========');
+    print('-MOSTRANDO NOTIFICACIÓN DE PRUEBA-');
     print('   Título: $title');
     print('   Descripción: $description');
     

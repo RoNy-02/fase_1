@@ -1,33 +1,6 @@
 # Integración Firebase - Notas y Eventos por Usuario
 
----
 
-## Estructura de Datos en Firebase
-
-```
-Firestore/
-├── users/
-│   └── {userId}/
-│       ├── notes/
-│       │   └── {noteId}
-│       │       ├── title: String
-│       │       ├── content: String
-│       │       ├── isPinned: Boolean
-│       │       ├── createdAt: Timestamp
-│       │       └── updatedAt: Timestamp
-│       │
-│       └── events/
-│           └── {eventId}
-│               ├── title: String
-│               ├── description: String
-│               ├── date: String (formato: "dd/MM/yyyy HH:mm")
-│               ├── location: String
-│               ├── tag: String
-│               ├── createdAt: Timestamp
-│               └── updatedAt: Timestamp
-```
-
----
 
 
 ### 1. **data_provider.dart** (Modificado)
@@ -96,9 +69,7 @@ await firestoreProvider.updateEvent(eventId, {
 
 ---
 
-##  Seguridad (Firestore Rules)
-
-Para proteger los datos, agregar estas reglas en Firestore:
+##  Seguridad o reglas para la base de datos
 
 ```javascript
 rules_version = '2';

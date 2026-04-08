@@ -120,14 +120,17 @@ class _HomeScreenState extends State<HomeScreen> {
             label: 'Inicio',
           ),
           BottomNavigationBarItem(
+            backgroundColor: Color.fromARGB(255, 160, 19, 66),
             icon: Icon(Icons.note),
             label: 'Notas',
           ),
           BottomNavigationBarItem(
+            backgroundColor: Color.fromARGB(255, 160, 19, 66),
             icon: Icon(Icons.event),
             label: 'Eventos',
           ),
           BottomNavigationBarItem(
+            backgroundColor: Color.fromARGB(255, 160, 19, 66),
             icon: Icon(Icons.alarm),
             label: 'Recordatorios',
           ),
@@ -152,8 +155,8 @@ class _HomeMenuState extends State<HomeMenu> {
     
     try {
       await _notificationsService.showTestNotification(
-        '🧪 Notificación de Prueba',
-        'Si ves este mensaje, ¡las notificaciones funcionan! ✅',
+        'Notificación de Prueba',
+        'Si ves este mensaje, ¡las notificaciones funcionan! ',
       );
       
       if (!mounted) return;
@@ -264,6 +267,23 @@ class _HomeMenuState extends State<HomeMenu> {
                   ),
                 ],
               ),
+            ),
+          ),
+          const SizedBox(height: 16.0),
+          // Botón de Notificación de Prueba
+          ElevatedButton.icon(
+            onPressed: _isTestingNotification ? null : _sendTestNotification,
+            icon: _isTestingNotification 
+              ? const SizedBox(
+                  width: 20,
+                  height: 20,
+                  child: CircularProgressIndicator(strokeWidth: 2, valueColor: AlwaysStoppedAnimation(Colors.white)),
+                )
+              : const Icon(Icons.notifications),
+            label: Text(_isTestingNotification ? 'Enviando...' : 'Enviar Notificación de Prueba'),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.orange,
+              padding: const EdgeInsets.symmetric(vertical: 12.0),
             ),
           ),
           const SizedBox(height: 24.0),
@@ -496,7 +516,7 @@ class _RemindersSectionState extends State<_RemindersSection> {
                           });
                           ScaffoldMessenger.of(context).showSnackBar(
                             const SnackBar(
-                              content: Text('✅ Recordatorio eliminado'),
+                              content: Text('Recordatorio eliminado'),
                               duration: Duration(seconds: 2),
                               backgroundColor: Colors.green,
                             ),
@@ -527,7 +547,7 @@ class _EventsSectionState extends State<_EventsSection> {
   void initState() {
     super.initState();
     _eventService = EventProvider();
-    print('📌 EventsSection creada, eventos actuales: ${_eventService.events.length}');
+    print(' EventsSection creada, eventos actuales: ${_eventService.events.length}');
     _eventService.addListener(_onEventsChanged);
   }
 
@@ -538,7 +558,7 @@ class _EventsSectionState extends State<_EventsSection> {
   }
 
   void _onEventsChanged() {
-    print('📌 EventsSection: cambio detectado, eventos ahora: ${_eventService.events.length}');
+    print(' EventsSection: cambio detectado, eventos ahora: ${_eventService.events.length}');
     setState(() {});
   }
 
@@ -642,7 +662,7 @@ class _EventsSectionState extends State<_EventsSection> {
                           _eventService.removeEvent(index);
                           ScaffoldMessenger.of(context).showSnackBar(
                             const SnackBar(
-                              content: Text('✅ Evento eliminado'),
+                              content: Text('Evento eliminado'),
                               duration: Duration(seconds: 2),
                               backgroundColor: Colors.green,
                             ),
