@@ -2,10 +2,9 @@ import 'package:fase_1/Screens/events_screen.dart';
 import 'package:fase_1/Screens/notes_screen.dart';
 import 'package:fase_1/Screens/reminder_screen.dart';
 import 'package:flutter/material.dart';
-import '../helpers/services/local_notifications_service.dart';
-import '../helpers/services/reminder_service.dart';
-import '../helpers/services/note_service.dart';
-import '../helpers/services/event_service.dart';
+import '../helpers/providers/notification_provider.dart';
+import '../helpers/providers/data_provider.dart';
+import '../helpers/providers/auth_provider.dart';
 import '../models/note.dart';
 import '../models/event.dart';
 
@@ -19,6 +18,25 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   int _selectedIndex = 0;
+  final FirestoreProvider _firestoreProvider = FirestoreProvider();
+  bool _isDataLoaded = false;
+
+  @override
+  void initState() {
+    super.initState();
+    // Sincronizar datos de Firebase al iniciar la pantalla
+    _loadDataFromFirebase();
+  }
+
+  Future<void> _loadDataFromFirebase() async {
+    if (!_isDataLoaded) {
+      print('📱 HomeScreen iniciada - cargando datos de Firebase...');
+      await _firestoreProvider.syncAllUserData();
+      setState(() {
+        _isDataLoaded = true;
+      });
+    }
+  }
 
   static List<Widget> _pages = <Widget>[
     HomeMenu(), // Nueva pantalla de inicio con datos y botones
@@ -37,10 +55,59 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        titleTextStyle: TextStyle(color: Color(0xffffffff),
+        titleTextStyle: const TextStyle(color: Color(0xffffffff),
         fontSize: 23),
         title: const Text('Notas y más..'),
         backgroundColor: const Color.fromARGB(255, 160, 19, 66),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.login),
+            onPressed: () {
+              showDialog(
+                context: context,
+                builder: (BuildContext context) {
+                  return AlertDialog(
+                    title: const Text('Cerrar sesión'),
+                    content: const Text('¿Deseas cerrar sesión? Tus datos serán conservados.'),
+                    actions: [
+                      TextButton(
+                        onPressed: () {
+                          Navigator.pop(context);
+                        },
+                        child: const Text('Cancelar'),
+                      ),
+                      ElevatedButton(
+                        onPressed: () async {
+                          try {
+                            await AuthProvider.signOut();
+                            if (!context.mounted) return;
+                            Navigator.pop(context);
+                            // AuthWrapper detectará automáticamente el logout
+                            // y mostrará LoginRegisterScreen
+                          } catch (e) {
+                            if (!context.mounted) return;
+                            Navigator.pop(context);
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text('❌ Error: $e'),
+                                duration: const Duration(seconds: 3),
+                                backgroundColor: Colors.red,
+                              ),
+                            );
+                          }
+                        },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.red,
+                        ),
+                        child: const Text('Cerrar Sesión'),
+                      ),
+                    ],
+                  );
+                },
+              );
+            },
+          ),
+        ],
       ),
       body: _pages[_selectedIndex],
       bottomNavigationBar: BottomNavigationBar(
@@ -76,8 +143,8 @@ class HomeMenu extends StatefulWidget {
 }
 
 class _HomeMenuState extends State<HomeMenu> {
-  final LocalNotificationsService _notificationsService =
-      LocalNotificationsService();
+  final NotificationProvider _notificationsService =
+      NotificationProvider();
   bool _isTestingNotification = false;
 
   Future<void> _sendTestNotification() async {
@@ -129,7 +196,7 @@ class _HomeMenuState extends State<HomeMenu> {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           const Text(
-            'Resumen de tus datos',
+            'Bienvenido..😉',
             style: TextStyle(
               fontSize: 24,
               fontWeight: FontWeight.bold,
@@ -169,14 +236,15 @@ class _HomeMenuState extends State<HomeMenu> {
                   ),
                   const SizedBox(height: 12.0),
                   ElevatedButton.icon(
-                    onPressed: () {
+                    onPressed: () async {
                       if (_quickNoteController.text.isNotEmpty) {
-                        // Guardar nota en el servicio
-                        final note = Note(
-                          title: 'Nota Rápida',
-                          content: _quickNoteController.text,
-                        );
-                        NoteService().addNote(note);
+                        final firestoreProvider = FirestoreProvider();
+                        
+                        await firestoreProvider.addNote({
+                          'title': 'Nota Rápida',
+                          'content': _quickNoteController.text,
+                          'isPinned': false,
+                        });
                         
                         ScaffoldMessenger.of(context).showSnackBar(
                           const SnackBar(
@@ -250,30 +318,6 @@ class _HomeMenuState extends State<HomeMenu> {
                 const SizedBox(height: 24.0),
                 // Sección de Eventos Creados
                 _EventsSection(),
-                const SizedBox(height: 24.0),
-                ElevatedButton.icon(
-                  onPressed: _isTestingNotification ? null : _sendTestNotification,
-                  icon: _isTestingNotification
-                      ? const SizedBox(
-                          width: 20,
-                          height: 20,
-                          child: CircularProgressIndicator(
-                            strokeWidth: 2,
-                            valueColor:
-                                AlwaysStoppedAnimation<Color>(Colors.white),
-                          ),
-                        )
-                      : const Icon(Icons.notifications_active),
-                  label: Text(
-                    _isTestingNotification 
-                        ? 'Enviando...' 
-                        : '🧪 Probar Notificación',
-                  ),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.orange,
-                    padding: const EdgeInsets.symmetric(vertical: 12.0),
-                  ),
-                ),
               ],
             ),
           ),
@@ -344,7 +388,7 @@ class _RemindersSection extends StatefulWidget {
 class _RemindersSectionState extends State<_RemindersSection> {
   @override
   Widget build(BuildContext context) {
-    final reminders = ReminderService().reminders;
+    final reminders = ReminderProvider().reminders;
 
     if (reminders.isEmpty) {
       return Card(
@@ -448,7 +492,7 @@ class _RemindersSectionState extends State<_RemindersSection> {
                         icon: const Icon(Icons.delete, color: Colors.red),
                         onPressed: () {
                           setState(() {
-                            ReminderService().removeReminder(index);
+                            ReminderProvider().removeReminder(index);
                           });
                           ScaffoldMessenger.of(context).showSnackBar(
                             const SnackBar(
@@ -477,36 +521,33 @@ class _EventsSection extends StatefulWidget {
 }
 
 class _EventsSectionState extends State<_EventsSection> {
+  late EventProvider _eventService;
+
+  @override
+  void initState() {
+    super.initState();
+    _eventService = EventProvider();
+    print('📌 EventsSection creada, eventos actuales: ${_eventService.events.length}');
+    _eventService.addListener(_onEventsChanged);
+  }
+
+  @override
+  void dispose() {
+    _eventService.removeListener(_onEventsChanged);
+    super.dispose();
+  }
+
+  void _onEventsChanged() {
+    print('📌 EventsSection: cambio detectado, eventos ahora: ${_eventService.events.length}');
+    setState(() {});
+  }
+
   @override
   Widget build(BuildContext context) {
-    final events = EventService().events;
+    final events = _eventService.events;
 
     if (events.isEmpty) {
-      return Card(
-        color: Colors.grey[100],
-        child: Padding(
-          padding: const EdgeInsets.all(16.0),
-          child: Column(
-            children: [
-              const Icon(Icons.event, color: Colors.grey, size: 40),
-              const SizedBox(height: 8.0),
-              const Text(
-                'Eventos Creados',
-                style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.grey,
-                ),
-              ),
-              const SizedBox(height: 8.0),
-              const Text(
-                'No hay eventos creados aún',
-                style: TextStyle(fontSize: 14, color: Colors.grey),
-              ),
-            ],
-          ),
-        ),
-      );
+      return const SizedBox.shrink();
     }
 
     return Card(
@@ -598,9 +639,7 @@ class _EventsSectionState extends State<_EventsSection> {
                       IconButton(
                         icon: const Icon(Icons.delete, color: Colors.red),
                         onPressed: () {
-                          setState(() {
-                            EventService().removeEvent(index);
-                          });
+                          _eventService.removeEvent(index);
                           ScaffoldMessenger.of(context).showSnackBar(
                             const SnackBar(
                               content: Text('✅ Evento eliminado'),

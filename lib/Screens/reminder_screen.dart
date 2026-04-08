@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-import '../helpers/services/local_notifications_service.dart';
-import '../helpers/services/reminder_service.dart';
+import '../helpers/providers/notification_provider.dart';
+import '../helpers/providers/data_provider.dart';
 import '../models/reminder.dart';
 
 class ReminderScreen extends StatefulWidget {
@@ -12,8 +12,8 @@ class ReminderScreen extends StatefulWidget {
 }
 
 class _ReminderScreenState extends State<ReminderScreen> {
-  final LocalNotificationsService _notificationsService =
-      LocalNotificationsService();
+  final NotificationProvider _notificationsService =
+      NotificationProvider();
   
   String? selectedDate;
   String? selectedTime;
@@ -97,7 +97,7 @@ class _ReminderScreenState extends State<ReminderScreen> {
         time: selectedTime!,
         description: descriptionController.text,
       );
-      ReminderService().addReminder(reminder);
+      ReminderProvider().addReminder(reminder);
       
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(

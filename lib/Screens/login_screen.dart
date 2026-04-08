@@ -14,19 +14,25 @@ class _LoginRegisterScreenState extends State<LoginRegisterScreen> {
   final TextEditingController _passwordController = TextEditingController();
   bool isLogin = true;
   bool isLoading = false;
+  bool _obscurePassword = true;
 
   Future<void> signInWithEmailPassword(String email, String password) async {
     try {
+      if (!mounted) return;
       setState(() => isLoading = true);
       await FirebaseAuth.instance.signInWithEmailAndPassword(
         email: email,
         password: password,
       );
-      Navigator.pushReplacementNamed(context, '/home');
+      // AuthWrapper detectará automáticamente el login
+      // No hacer nada más aquí - el widget será reemplazado
     } on FirebaseAuthException catch (e) {
-      setState(() => isLoading = false);
+      if (!mounted) return;
       
       if (e.code == 'wrong-password') {
+        if (!mounted) return;
+        setState(() => isLoading = false);
+        if (!mounted) return;
         showDialog(
           context: context,
           builder: (BuildContext context) {
@@ -43,6 +49,9 @@ class _LoginRegisterScreenState extends State<LoginRegisterScreen> {
           },
         );
       } else {
+        if (!mounted) return;
+        setState(() => isLoading = false);
+        
         String errorMessage = 'Error al iniciar sesión';
         
         if (e.code == 'user-not-found') {
@@ -55,12 +64,16 @@ class _LoginRegisterScreenState extends State<LoginRegisterScreen> {
           errorMessage = 'Demasiados intentos, intenta más tarde';
         }
         
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(errorMessage, style: const TextStyle(color: Colors.white))),
-        );
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text(errorMessage, style: const TextStyle(color: Colors.white))),
+          );
+        }
       }
     } catch (e) {
+      if (!mounted) return;
       setState(() => isLoading = false);
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Error desconocido', style: TextStyle(color: Colors.white))),
       );
@@ -69,16 +82,15 @@ class _LoginRegisterScreenState extends State<LoginRegisterScreen> {
 
   Future<void> registerWithEmailPassword(String email, String password) async {
     try {
+      if (!mounted) return;
       setState(() => isLoading = true);
       await FirebaseAuth.instance.createUserWithEmailAndPassword(
         email: email,
         password: password,
       );
-      Navigator.pushReplacementNamed(context, '/home');
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Registro exitoso', style: TextStyle(color: Colors.white))),
-      );
+      // AuthWrapper detectará automáticamente el registro
     } on FirebaseAuthException catch (e) {
+      if (!mounted) return;
       setState(() => isLoading = false);
       String errorMessage = 'Error al registrarse';
       
@@ -94,14 +106,19 @@ class _LoginRegisterScreenState extends State<LoginRegisterScreen> {
         errorMessage = 'Demasiados intentos, intenta más tarde';
       }
       
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(errorMessage, style: const TextStyle(color: Colors.white))),
-      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(errorMessage, style: const TextStyle(color: Colors.white))),
+        );
+      }
     } catch (e) {
+      if (!mounted) return;
       setState(() => isLoading = false);
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Error desconocido', style: TextStyle(color: Colors.white))),
-      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Error desconocido', style: TextStyle(color: Colors.white))),
+        );
+      }
     }
   }
 
@@ -157,12 +174,23 @@ class _LoginRegisterScreenState extends State<LoginRegisterScreen> {
                 const SizedBox(height: 20),
                 TextFormField(
                   controller: _passwordController,
-                  obscureText: true,
+                  obscureText: _obscurePassword,
                   decoration: InputDecoration(
                     filled: true,
                     fillColor: Colors.white,
                     hintText: isLogin ? "Contraseña" : "Crear Contraseña",
                     prefixIcon: const Icon(Icons.lock),
+                    suffixIcon: IconButton(
+                      icon: Icon(
+                        _obscurePassword ? Icons.visibility_off : Icons.visibility,
+                        color: Colors.grey,
+                      ),
+                      onPressed: () {
+                        setState(() {
+                          _obscurePassword = !_obscurePassword;
+                        });
+                      },
+                    ),
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(15),
                       borderSide: BorderSide.none,

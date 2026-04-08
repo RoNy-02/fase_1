@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:intl/intl.dart';
-import '../helpers/services/event_service.dart';
+import '../helpers/providers/data_provider.dart';
 import '../models/event.dart';
 
 class EventsScreen extends StatefulWidget {
@@ -12,10 +12,9 @@ class EventsScreen extends StatefulWidget {
 }
 
 class _EventsScreenState extends State<EventsScreen> {
-  final CollectionReference _eventsCollection =
-      FirebaseFirestore.instance.collection('events');
+  final FirestoreProvider _firestoreProvider = FirestoreProvider();
 
-  void _addOrEditEvent({Map<String, String>? existingEvent, int? index}) {
+  void _addOrEditEvent({Map<String, dynamic>? existingEvent, String? docId, int? index}) {
     final TextEditingController titleController = TextEditingController(
       text: existingEvent?['title'] ?? '',
     );
@@ -47,7 +46,7 @@ class _EventsScreenState extends State<EventsScreen> {
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
-          title: Text(existingEvent != null ? 'Editar Evento' : 'Crear Nuevo Evento'),
+          title: Text(docId != null ? 'Editar Evento' : 'Crear Nuevo Evento'),
           content: SingleChildScrollView(
             child: Column(
               mainAxisSize: MainAxisSize.min,
@@ -115,6 +114,9 @@ class _EventsScreenState extends State<EventsScreen> {
                     dateController.text.isNotEmpty &&
                     timeController.text.isNotEmpty &&
                     locationController.text.isNotEmpty) {
+                  
+                  Navigator.pop(context);
+                  
                   final newEvent = {
                     'title': titleController.text,
                     'description': descriptionController.text,
@@ -123,17 +125,14 @@ class _EventsScreenState extends State<EventsScreen> {
                     'tag': existingEvent?['tag'] ?? 'personal',
                   };
 
-                  Navigator.pop(context);
-
-                  if (existingEvent != null && index != null) {
-                    final docId = existingEvent['id'];
-                    if (docId != null) {
-                      await _eventsCollection.doc(docId).update(newEvent);
-                    }
+                  if (docId != null) {
+                    // Editar evento existente
+                    await _firestoreProvider.updateEvent(docId, newEvent);
                   } else {
-                    await _eventsCollection.add(newEvent);
+                    // Agregar nuevo evento
+                    await _firestoreProvider.addEvent(newEvent);
                     
-                    // Guardar evento en el servicio
+                    // Guardar evento en el servicio local
                     final event = Event(
                       title: titleController.text,
                       description: descriptionController.text,
@@ -141,7 +140,7 @@ class _EventsScreenState extends State<EventsScreen> {
                       time: timeController.text,
                       location: locationController.text,
                     );
-                    EventService().addEvent(event);
+                    EventProvider().addEvent(event);
                   }
 
                   setState(() {});
@@ -151,7 +150,7 @@ class _EventsScreenState extends State<EventsScreen> {
                   );
                 }
               },
-              child: Text(existingEvent != null ? 'Actualizar Evento' : 'Guardar Evento'),
+              child: Text(docId != null ? 'Actualizar Evento' : 'Guardar Evento'),
             ),
           ],
         );
@@ -172,7 +171,7 @@ class _EventsScreenState extends State<EventsScreen> {
         backgroundColor: const Color.fromARGB(255, 156, 39, 176),
       ),
       body: StreamBuilder<QuerySnapshot>(
-        stream: _eventsCollection.snapshots(),
+        stream: _firestoreProvider.getUserEvents(),
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
             return const Center(child: CircularProgressIndicator());
@@ -184,11 +183,21 @@ class _EventsScreenState extends State<EventsScreen> {
           }
 
           final events = snapshot.data!.docs;
+          final colors = [
+            Colors.blue.shade50,
+            Colors.green.shade50,
+            Colors.orange.shade50,
+            Colors.purple.shade50,
+            Colors.pink.shade50,
+            Colors.yellow.shade50,
+          ];
           return ListView.builder(
             itemCount: events.length,
             itemBuilder: (context, index) {
               final event = events[index].data() as Map<String, dynamic>;
+              final backgroundColor = colors[index % colors.length];
               return Card(
+                color: backgroundColor,
                 child: ListTile(
                   title: Text(event['title'] ?? ''),
                   subtitle: Column(
@@ -216,7 +225,6 @@ class _EventsScreenState extends State<EventsScreen> {
                           Text(event['location'] ?? ''),
                         ],
                       ),
-                      Chip(label: Text(event['tag'] ?? 'personal')),
                     ],
                   ),
                   trailing: Row(
@@ -226,7 +234,8 @@ class _EventsScreenState extends State<EventsScreen> {
                         icon: const Icon(Icons.edit, color: Colors.blue),
                         onPressed: () {
                           _addOrEditEvent(
-                            existingEvent: Map<String, String>.from(event),
+                            existingEvent: event,
+                            docId: events[index].id,
                             index: index,
                           );
                         },
@@ -250,7 +259,7 @@ class _EventsScreenState extends State<EventsScreen> {
                                   ElevatedButton(
                                     onPressed: () async {
                                       Navigator.pop(context);
-                                      await _eventsCollection.doc(events[index].id).delete();
+                                      await _firestoreProvider.deleteEvent(events[index].id);
                                     },
                                     style: ElevatedButton.styleFrom(
                                       backgroundColor: Colors.red,
